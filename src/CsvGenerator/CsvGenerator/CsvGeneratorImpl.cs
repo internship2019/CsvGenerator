@@ -37,7 +37,7 @@ namespace CsvGenerator
                 writer.Write(property.Name);
             }
 
-            writer.Write(options.LineSeparator);
+            WriteNewline(writer, options);
         }
 
         private void WriteCollection(TextWriter writer, CsvOptions options, IEnumerable<T> collection)
@@ -45,7 +45,7 @@ namespace CsvGenerator
             foreach (var element in collection)
             {
                 WriteElement(writer, options, element);
-                writer.Write(options.LineSeparator);
+                WriteNewline(writer, options);
             }
         }
 
@@ -56,7 +56,7 @@ namespace CsvGenerator
                 if (property != properties.First())
                     writer.Write(options.ValueSeparator);
 
-                writer.Write(ObjPropertyToCsvStr(property, element));
+                writer.Write(ObjPropertyToCsvStr(property, options, element));
             }
         }
 
@@ -66,7 +66,7 @@ namespace CsvGenerator
          * 
          * TODO: if nb will contain comma can be determined in constructor.
         **/
-        private string ObjPropertyToCsvStr(PropertyInfo property, T obj)
+        private string ObjPropertyToCsvStr(PropertyInfo property, CsvOptions options, T obj)
         {
             var value = property.GetValue(obj);
 
@@ -74,15 +74,26 @@ namespace CsvGenerator
             if (value == null)
                 return string.Empty;
 
-            var valueStr = property.GetValue(obj).ToString();
+            var valueStr = FormatIfPossible(options, property.PropertyType, value);
 
-            if (TypeIsNbWithPossibleComma(property.PropertyType))
-                valueStr = valueStr.Replace(',', '.');
+            if (valueStr == null)
+                valueStr = property.GetValue(obj).ToString();
 
-            return StrToCsv(valueStr);
+            return StrToCsv(options, valueStr);
         }
 
-        private bool TypeIsNbWithPossibleComma(Type type)
+        private string FormatIfPossible(CsvOptions options, Type propertyType, object value)
+        {
+            if (TypeIsRealNb(propertyType))
+                return string.Format("{0:" + options.FloatingNumberFormat + "}", value);
+
+            if (TypeCanUseDateTimeFormat(propertyType))
+                return string.Format("{0:" + options.DateTimeFormat + "}", value);
+
+            return null;
+        }
+
+        private bool TypeIsRealNb(Type type)
         {
             return
                 type == typeof(float) ||
@@ -90,17 +101,33 @@ namespace CsvGenerator
                 type == typeof(decimal);
         }
 
-        /*
-         * TODO: cache the used array.       
-        **/
-        private string StrToCsv(string str)
+        private bool TypeCanUseDateTimeFormat(Type type)
+        {
+            return type == typeof(DateTime) || type == typeof(DateTimeOffset);
+        }
+
+        private string StrToCsv(CsvOptions options, string str)
         {
             str = str.Replace("\\", "\\\\");
 
-            if (str.IndexOfAny(new[] { ',', '"' }) != -1)
+            if (options.ForceQuoteValues || MustAddQuoutes(str))
                 str = '"' + str + '"';
 
             return str;
+        }
+
+        /*
+         * TODO: cache the used array.       
+        **/
+        private bool MustAddQuoutes(string str)
+        {
+            return str.IndexOfAny(new[] { ',', '"' }) != -1;
+        }
+
+        private void WriteNewline(TextWriter writer, CsvOptions options)
+        {
+            if (options.AddTrailingLineEnding)
+                writer.Write(options.LineSeparator);
         }
 
         private IEnumerable<PropertyInfo> GetPropertiesOfInterest()
