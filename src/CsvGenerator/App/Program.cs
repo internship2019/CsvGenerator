@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using CsvGenerator;
+using App.Benchmarks;
+using BenchmarkDotNet.Running;
+using CsvSerializer;
 
 namespace App
 {
@@ -16,6 +18,11 @@ namespace App
     class Program
     {
         static void Main(string[] args)
+        {
+            BenchmarkRunner.Run<GeneralBenchmark>();
+        }
+
+        private static void BasicDemo()
         {
             var samples = new[]
             {

@@ -6,6 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CsvGenerator\CsvGenerator.csproj" />
+    <ProjectReference Include="..\CsvGenerator\CsvSerializer.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Benchmarks\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.4" />
   </ItemGroup>
 </Project>

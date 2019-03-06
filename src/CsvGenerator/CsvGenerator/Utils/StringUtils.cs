@@ -1,5 +1,5 @@
 ﻿using System;
-namespace CsvGenerator.Utils
+namespace CsvSerializer.Utils
 {
     public static class StringUtils
     {

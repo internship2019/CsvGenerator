@@ -1,7 +1,7 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsvGenerator", "CsvGenerator\CsvGenerator.csproj", "{E4557755-C55B-48CA-8B56-E89586D02932}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsvSerializer", "CsvGenerator\CsvSerializer.csproj", "{E4557755-C55B-48CA-8B56-E89586D02932}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App", "App\App.csproj", "{3F0227DA-2E78-4593-9811-65BA8144641B}"
 EndProject

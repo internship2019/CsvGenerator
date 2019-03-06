@@ -1,5 +1,5 @@
 ﻿using System;
-namespace CsvGenerator
+namespace CsvSerializer
 {
     public class CsvOptions
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace CsvGenerator
+namespace CsvSerializer
 {
     public interface ICsvGenerator<T>
     {

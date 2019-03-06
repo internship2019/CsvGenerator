@@ -13,6 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CsvGenerator\CsvGenerator.csproj" />
+    <ProjectReference Include="..\CsvGenerator\CsvSerializer.csproj" />
   </ItemGroup>
 </Project>

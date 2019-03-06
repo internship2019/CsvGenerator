@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace CsvGenerator.Utils
+namespace CsvSerializer.Utils
 {
     public static class CsvUtils
     {

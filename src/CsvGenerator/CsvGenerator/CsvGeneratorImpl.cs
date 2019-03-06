@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using CsvGenerator.Utils;
+using CsvSerializer.Utils;
 
-namespace CsvGenerator
+namespace CsvSerializer
 {
     public class CsvGeneratorImpl<T> : ICsvGenerator<T>
     {
@@ -131,11 +131,7 @@ namespace CsvGenerator
         private static IEnumerable<PropertyInfo> GetPropertiesOfInterest()
         {
             var allProperties = typeof(T).GetProperties();
-            foreach (var property in allProperties)
-            {
-                if (IsATypeOfInterest(property.PropertyType))
-                    yield return property;
-            }
+            return allProperties.Where(x => IsATypeOfInterest(x.PropertyType));
         }
 
         private static bool IsATypeOfInterest(Type type)

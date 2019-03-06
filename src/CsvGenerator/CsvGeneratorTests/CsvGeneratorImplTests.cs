@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using CsvGenerator;
+using CsvSerializer;
 using Xunit;
 
 namespace CsvGeneratorTests
