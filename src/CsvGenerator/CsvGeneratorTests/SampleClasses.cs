@@ -33,4 +33,20 @@ namespace CsvGeneratorTests
         public DateTime DateTime { get; set; }
         public DateTimeOffset DateTimeOffset { get; set; }
     }
+
+    public enum EnumSample
+    {
+        Value1,
+        Value2
+    }
+
+    public class ClassWithEnum
+    {
+        public EnumSample AEnum { get; set; }
+    }
+
+    public class ClassWithNullable
+    {
+        public int? ANumber { get; set; }
+    }
 }

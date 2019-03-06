@@ -1,14 +1,19 @@
-﻿using System;
+﻿#pragma warning disable RECS0082 // Parameter has the same name as a member and hides it
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using CsvGenerator.Utils;
 
 namespace CsvGenerator
 {
     public class CsvGeneratorImpl<T> : ICsvGenerator<T>
     {
         private IReadOnlyList<PropertyInfo> properties;
+        private TextWriter writer;
+        private CsvOptions options;
 
         public CsvGeneratorImpl()
         {
@@ -20,14 +25,25 @@ namespace CsvGenerator
             if (properties.Count == 0)
                 return;
 
-            WriteHeader(writer, options);
-            WriteCollection(writer, options, collection);
+            Inject(writer, options);
+
+            WriteHeader();
+            WriteCollection(collection);
+        }
+
+        private void Inject(TextWriter writer, CsvOptions options)
+        {
+            if (writer == null || options == null)
+                throw new ArgumentException();
+
+            this.writer = writer;
+            this.options = options;
         }
 
         /*
          * It may be an option to cache the header.
         **/
-        private void WriteHeader(TextWriter writer, CsvOptions options)
+        private void WriteHeader()
         {
             foreach (var property in properties)
             {
@@ -37,100 +53,82 @@ namespace CsvGenerator
                 writer.Write(property.Name);
             }
 
-            WriteNewline(writer, options);
+            WriteNewline();
         }
 
-        private void WriteCollection(TextWriter writer, CsvOptions options, IEnumerable<T> collection)
+        private void WriteCollection(IEnumerable<T> collection)
         {
             foreach (var element in collection)
             {
-                WriteElement(writer, options, element);
-                WriteNewline(writer, options);
+                WriteElement(element);
+                WriteNewline();
             }
         }
 
-        private void WriteElement(TextWriter writer, CsvOptions options, T element)
+        private void WriteElement(T element)
         {
             foreach (var property in properties)
             {
                 if (property != properties.First())
                     writer.Write(options.ValueSeparator);
 
-                writer.Write(ObjPropertyToCsvStr(property, options, element));
+                writer.Write(ObjPropertyToCsvStr(property, element));
             }
         }
 
         /*
          * This can be optimized.
          * For example, int-s will never have commas or double quoutes in them.
-         * 
-         * TODO: if nb will contain comma can be determined in constructor.
         **/
-        private string ObjPropertyToCsvStr(PropertyInfo property, CsvOptions options, T obj)
+        private string ObjPropertyToCsvStr(PropertyInfo property, T obj)
         {
             var value = property.GetValue(obj);
 
-            // Return empty string if value is null
             if (value == null)
                 return string.Empty;
 
-            var valueStr = FormatIfPossible(options, property.PropertyType, value);
+            var valueStr = FormatIfPossible(property.PropertyType, value);
 
             if (valueStr == null)
                 valueStr = property.GetValue(obj).ToString();
 
-            return StrToCsv(options, valueStr);
+            return StrToCsv(valueStr);
         }
 
-        private string FormatIfPossible(CsvOptions options, Type propertyType, object value)
+        private string FormatIfPossible(Type propertyType, object value)
         {
-            if (TypeIsRealNb(propertyType))
+            if (propertyType.IsFloatingPointNb())
                 return string.Format("{0:" + options.FloatingNumberFormat + "}", value);
 
-            if (TypeCanUseDateTimeFormat(propertyType))
+            if (propertyType.CanUseDateTimeFormat())
                 return string.Format("{0:" + options.DateTimeFormat + "}", value);
 
             return null;
         }
 
-        private bool TypeIsRealNb(Type type)
+        private string StrToCsv(string str)
         {
-            return
-                type == typeof(float) ||
-                type == typeof(double) ||
-                type == typeof(decimal);
-        }
+            str = CsvUtils.ParseSpecialCharacters(str);
 
-        private bool TypeCanUseDateTimeFormat(Type type)
-        {
-            return type == typeof(DateTime) || type == typeof(DateTimeOffset);
-        }
-
-        private string StrToCsv(CsvOptions options, string str)
-        {
-            str = str.Replace("\\", "\\\\");
-
-            if (options.ForceQuoteValues || MustAddQuoutes(str))
-                str = '"' + str + '"';
+            if (MustEnquoute(str))
+                str = StringUtils.Enquote(str);
 
             return str;
         }
 
-        /*
-         * TODO: cache the used array.       
-        **/
-        private bool MustAddQuoutes(string str)
+        private bool MustEnquoute(string str)
         {
-            return str.IndexOfAny(new[] { ',', '"' }) != -1;
+            return options.ForceQuoteValues || CsvUtils.StrMustAddQuoutes(str);
         }
 
-        private void WriteNewline(TextWriter writer, CsvOptions options)
+        private void WriteNewline()
         {
             if (options.AddTrailingLineEnding)
                 writer.Write(options.LineSeparator);
         }
 
-        private IEnumerable<PropertyInfo> GetPropertiesOfInterest()
+        #region Static helpers
+        private static IEnumerable<PropertyInfo> GetPropertiesOfInterest()
         {
             var allProperties = typeof(T).GetProperties();
             foreach (var property in allProperties)
@@ -140,7 +138,7 @@ namespace CsvGenerator
             }
         }
 
-        private bool IsATypeOfInterest(Type type)
+        private static bool IsATypeOfInterest(Type type)
         {
             return
                 type.IsPrimitive ||
@@ -151,16 +149,18 @@ namespace CsvGenerator
                 type == typeof(DateTimeOffset) ||
                 type == typeof(TimeSpan) ||
                 type == typeof(Guid) ||
-                IsAGoodNullable(type);
+                IsAnInterestingNullable(type);
         }
 
-        private bool IsAGoodNullable(Type type)
+        private static bool IsAnInterestingNullable(Type type)
         {
             var underlyingType = Nullable.GetUnderlyingType(type);
-            if (underlyingType != null)
-                return IsATypeOfInterest(underlyingType);
 
-            return false;
+            if (underlyingType == null)
+                return false;
+
+            return IsATypeOfInterest(underlyingType);
         }
+        #endregion Static helpers
     }
 }

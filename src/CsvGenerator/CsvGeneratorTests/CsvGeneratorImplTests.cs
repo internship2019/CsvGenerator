@@ -98,47 +98,57 @@ namespace CsvGeneratorTests
         }
 
         [Fact]
-        public void StringWithComma_ValueIsDoubleQuoted()
+        public void LineSeparatorIsEmpty_NoNewlines()
         {
             // Arrange
-            var csvGenerator = new CsvGeneratorImpl<ClassWithAString>();
-            var samples = new[] { new ClassWithAString { AString = "," } };
+            var csvGenerator = new CsvGeneratorImpl<TwoIntsClass>();
+            var samples = new[] { new TwoIntsClass { Number1 = 42, Number2 = 24 } };
+
+            var options = defaultOptions;
+            options.AddTrailingLineEnding = true;
+            options.LineSeparator = string.Empty;
 
             // Act
-            csvGenerator.WriteCsv(samples, writer, defaultOptions);
+            csvGenerator.WriteCsv(samples, writer, options);
 
             // Assert
-            Assert.Contains("\",\"", GetWrittenStr());
+            Assert.Equal(GetWrittenStr(), "Number1,Number2" + "42,24");
         }
 
         [Fact]
-        public void StringWithDblQuote_ValueIsDoubleQuoted()
+        public void ContainsEnum_EnumValueIsWritten()
         {
             // Arrange
-            var csvGenerator = new CsvGeneratorImpl<ClassWithAString>();
-            var samples = new[] { new ClassWithAString { AString = "\"" } };
+            var csvGenerator = new CsvGeneratorImpl<ClassWithEnum>();
+            var samples = new[] { new ClassWithEnum { AEnum = EnumSample.Value2 } };
 
             // Act
             csvGenerator.WriteCsv(samples, writer, defaultOptions);
 
             // Assert
-            Assert.Contains("\"\"\"", GetWrittenStr());
+            Assert.Contains("Value2", GetWrittenStr());
         }
 
         [Fact]
-        public void StringWithBackslash_AnAdditionalBackslashIsAdded()
+        public void NullableWithNullAndValue_EmptyAndValueIsWritten()
         {
             // Arrange
-            var csvGenerator = new CsvGeneratorImpl<ClassWithAString>();
-            var samples = new[] { new ClassWithAString { AString = "\\" } };
+            var csvGenerator = new CsvGeneratorImpl<ClassWithNullable>();
+            var samples = new[]
+            {
+                new ClassWithNullable { ANumber = null },
+                new ClassWithNullable { ANumber = 42 }
+            };
 
             // Act
             csvGenerator.WriteCsv(samples, writer, defaultOptions);
 
             // Assert
-            Assert.Contains("\\\\", GetWrittenStr());
+            var expected = defaultOptions.LineSeparator + defaultOptions.LineSeparator + "42";
+            Assert.Contains(expected, GetWrittenStr());
         }
 
+        #region Options tests
         [Fact]
         public void ForcedQuotesOption_AllValuesAreDblQuoted()
         {
@@ -200,24 +210,51 @@ namespace CsvGeneratorTests
             // Assert
             Assert.DoesNotContain(options.LineSeparator, GetWrittenStr());
         }
+        #endregion Options tests
 
+        #region String tests
         [Fact]
-        public void LineSeparatorIsEmpty_NoNewlines()
+        public void StringWithComma_ValueIsDoubleQuoted()
         {
             // Arrange
-            var csvGenerator = new CsvGeneratorImpl<TwoIntsClass>();
-            var samples = new[] { new TwoIntsClass { Number1 = 42, Number2 = 24 } };
-
-            var options = defaultOptions;
-            options.AddTrailingLineEnding = true;
-            options.LineSeparator = string.Empty;
+            var csvGenerator = new CsvGeneratorImpl<ClassWithAString>();
+            var samples = new[] { new ClassWithAString { AString = "," } };
 
             // Act
-            csvGenerator.WriteCsv(samples, writer, options);
+            csvGenerator.WriteCsv(samples, writer, defaultOptions);
 
             // Assert
-            Assert.Equal(GetWrittenStr(), "Number1,Number2" + "42,24");
+            Assert.Contains("\",\"", GetWrittenStr());
         }
+
+        [Fact]
+        public void StringWithDblQuote_ValueIsDoubleQuoted()
+        {
+            // Arrange
+            var csvGenerator = new CsvGeneratorImpl<ClassWithAString>();
+            var samples = new[] { new ClassWithAString { AString = "\"" } };
+
+            // Act
+            csvGenerator.WriteCsv(samples, writer, defaultOptions);
+
+            // Assert
+            Assert.Contains("\"\"\"", GetWrittenStr());
+        }
+
+        [Fact]
+        public void StringWithBackslash_AnAdditionalBackslashIsAdded()
+        {
+            // Arrange
+            var csvGenerator = new CsvGeneratorImpl<ClassWithAString>();
+            var samples = new[] { new ClassWithAString { AString = "\\" } };
+
+            // Act
+            csvGenerator.WriteCsv(samples, writer, defaultOptions);
+
+            // Assert
+            Assert.Contains("\\\\", GetWrittenStr());
+        }
+        #endregion String tests
 
         #region Helpers
         private char DefaultSeparator => defaultOptions.ValueSeparator;
